@@ -1,19 +1,29 @@
 import { useState, useEffect } from 'react';
+import arcitura from '../../assets/arcitura.png';
+import brigh from '../../assets/brigh.png'
+import CertiProf from '../../assets/CertiProf.jpg'
+import credly from '../../assets/credly.jpg'
+import Digital from '../../assets/Digital.png'
+import Formarte from '../../assets/Formarte.png'
+import interso from '../../assets/interso.jpg'
+import scrum from '../../assets/scrum.jpg'
+import sena from '../../assets/sena.png'
+
 
 const Partners = () => {
   const [hoveredLogo, setHoveredLogo] = useState(null);
 
   // Lista de logos de aliados (usando placeholders por ahora)
   const partners = [
-    { id: 1, name: 'CertiProf', logo: 'https://via.placeholder.com/150x60?text=CertiProf' },
-    { id: 2, name: 'Arcitura', logo: 'https://via.placeholder.com/150x60?text=Arcitura' },
-    { id: 3, name: 'FORMARTE', logo: 'https://via.placeholder.com/150x60?text=FORMARTE' },
-    { id: 4, name: 'Credly', logo: 'https://via.placeholder.com/150x60?text=Credly' },
-    { id: 5, name: 'Digital School', logo: 'https://via.placeholder.com/150x60?text=Digital+School' },
-    { id: 6, name: 'SCRUMstudy', logo: 'https://via.placeholder.com/150x60?text=SCRUMstudy' },
-    { id: 7, name: 'Intersoftware', logo: 'https://via.placeholder.com/150x60?text=Intersoftware' },
-    { id: 8, name: 'Brightest', logo: 'https://via.placeholder.com/150x60?text=Brightest' },
-    { id: 9, name: 'SENA', logo: 'https://via.placeholder.com/150x60?text=SENA' }
+    { id: 1, name: 'CertiProf', logo: CertiProf },
+    { id: 2, name: 'arcitura', logo: arcitura },
+    { id: 3, name: 'FORMARTE', logo: Formarte},
+    { id: 4, name: 'Credly', logo: credly },
+    { id: 5, name: 'Digital School', logo: Digital },
+    { id: 6, name: 'SCRUMstudy', logo: scrum},
+    { id: 7, name: 'Intersoftware', logo: interso },
+    { id: 8, name: 'Brightest', logo: brigh },
+    { id: 9, name: 'SENA', logo: sena }
   ];
 
   return (

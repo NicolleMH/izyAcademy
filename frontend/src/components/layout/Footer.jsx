@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import logo from '../../assets/logo_actualizado.webp';
 
 const Footer = () => {
   return (
@@ -70,9 +71,8 @@ const Footer = () => {
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <div className="flex items-center gap-4">
               <img 
-                src="https://via.placeholder.com/40" 
-                alt="IzyAcademy Logo" 
-                className="w-10 h-10 rounded-full"
+                src={logo} alt="IzyAcademy"
+                className="h-10 w-auto"
               />
             </div>
 

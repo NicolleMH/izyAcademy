@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import Button from '../ui/Button';
+import Swal from 'sweetalert2';
 
 const RegisterForm = () => {
   const [formData, setFormData] = useState({
-    nombre: '',
-    apellidos: '',
+    first_name: '',
+    last_name: '',
     email: '',
     password: '',
     confirmPassword: '',
@@ -34,12 +35,12 @@ const RegisterForm = () => {
   const validateForm = () => {
     const newErrors = {};
 
-    if (!formData.nombre.trim()) {
-      newErrors.nombre = 'El nombre es requerido';
+    if (!formData.first_name.trim()) {
+      newErrors.first_name = 'El nombre es requerido';
     }
 
-    if (!formData.apellidos.trim()) {
-      newErrors.apellidos = 'Los apellidos son requeridos';
+    if (!formData.last_name.trim()) {
+      newErrors.last_name = 'Los apellidos son requeridos';
     }
 
     if (!formData.email.trim()) {
@@ -77,29 +78,98 @@ const RegisterForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
+    // Validar el formulario
     const validationErrors = validateForm();
     
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
+      
+      // Mostrar alerta de error con SweetAlert
+      Swal.fire({
+        icon: 'error',
+        title: 'Error en el formulario',
+        text: 'Por favor, corrige los errores antes de continuar',
+        confirmButtonColor: '#3b82f6'
+      });
       return;
     }
 
     setIsSubmitting(true);
+    setErrors({});
 
-    // Aquí harás el fetch a tu backend
     try {
-      console.log('Datos del formulario:', formData);
-      // TODO: fetch a tu API
-      // const response = await fetch('tu-api/register', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify(formData)
-      // });
+      console.log('Intentando conectar con el servidor...');
       
-      alert('Registro exitoso!');
+      // Llamada directa al backend
+      const response = await fetch('http://localhost:3000/api/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          first_name: formData.first_name,
+          last_name: formData.last_name,
+          email: formData.email,
+          password: formData.password
+        })
+      });
+
+      console.log('Respuesta recibida:', response.status);
+
+      const data = await response.json();
+      console.log('Datos:', data);
+
+      if (data.success) {
+        // Alerta de éxito
+        await Swal.fire({
+          icon: 'success',
+          title: '¡Registro exitoso!',
+          text: 'Tu cuenta ha sido creada. Ya puedes iniciar sesión.',
+          confirmButtonColor: '#3b82f6',
+          confirmButtonText: 'Aceptar'
+        });
+        
+        // Limpiar formulario
+        setFormData({
+          first_name: '',
+          last_name: '',
+          email: '',
+          password: '',
+          confirmPassword: '',
+          acceptTerms: false,
+          acceptPrivacy: false
+        });
+      } else {
+        // Alerta de error del servidor
+        Swal.fire({
+          icon: 'error',
+          title: 'Error al registrar',
+          text: data.message || 'No se pudo completar el registro',
+          confirmButtonColor: '#3b82f6'
+        });
+      }
     } catch (error) {
-      console.error('Error:', error);
-      alert('Hubo un error en el registro');
+      console.error('Error completo:', error);
+      
+      // Alerta de error de conexión mejorada
+      Swal.fire({
+        icon: 'error',
+        title: 'Error de conexión',
+        html: `
+          <p>No se pudo conectar con el servidor.</p>
+          <br>
+          <p><strong>Verifica que:</strong></p>
+          <ul style="text-align: left;">
+            <li>El servidor backend esté corriendo</li>
+            <li>El servidor esté en el puerto 3000</li>
+            <li>No haya errores en la consola del backend</li>
+          </ul>
+          <br>
+          <p><strong>Error:</strong> ${error.message}</p>
+        `,
+        confirmButtonColor: '#3b82f6',
+        width: 600
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -130,39 +200,41 @@ const RegisterForm = () => {
                 
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div>
-                    <label htmlFor="nombre" className="block text-sm font-medium text-gray-700 mb-1">
+                    <label htmlFor="first_name" className="block text-sm font-medium text-gray-700 mb-1">
                       Nombre
                     </label>
                     <input
                       type="text"
-                      id="nombre"
-                      name="nombre"
-                      value={formData.nombre}
+                      id="first_name"
+                      name="first_name"
+                      value={formData.first_name}
                       onChange={handleChange}
                       className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
-                        errors.nombre ? 'border-red-500' : 'border-gray-300'
+                        errors.first_name ? 'border-red-500' : 'border-gray-300'
                       }`}
                       placeholder="Nombre"
+                      disabled={isSubmitting}
                     />
-                    {errors.nombre && <p className="text-red-500 text-sm mt-1">{errors.nombre}</p>}
+                    {errors.first_name && <p className="text-red-500 text-sm mt-1">{errors.first_name}</p>}
                   </div>
 
                   <div>
-                    <label htmlFor="apellidos" className="block text-sm font-medium text-gray-700 mb-1">
+                    <label htmlFor="last_name" className="block text-sm font-medium text-gray-700 mb-1">
                       Apellidos
                     </label>
                     <input
                       type="text"
-                      id="apellidos"
-                      name="apellidos"
-                      value={formData.apellidos}
+                      id="last_name"
+                      name="last_name"
+                      value={formData.last_name}
                       onChange={handleChange}
                       className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
-                        errors.apellidos ? 'border-red-500' : 'border-gray-300'
+                        errors.last_name ? 'border-red-500' : 'border-gray-300'
                       }`}
                       placeholder="Apellidos"
+                      disabled={isSubmitting}
                     />
-                    {errors.apellidos && <p className="text-red-500 text-sm mt-1">{errors.apellidos}</p>}
+                    {errors.last_name && <p className="text-red-500 text-sm mt-1">{errors.last_name}</p>}
                   </div>
 
                   <div>
@@ -178,7 +250,8 @@ const RegisterForm = () => {
                       className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
                         errors.email ? 'border-red-500' : 'border-gray-300'
                       }`}
-                      placeholder="Correo electrónico"
+                      placeholder="correo@ejemplo.com"
+                      disabled={isSubmitting}
                     />
                     {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
                   </div>
@@ -196,7 +269,8 @@ const RegisterForm = () => {
                       className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
                         errors.password ? 'border-red-500' : 'border-gray-300'
                       }`}
-                      placeholder="Contraseña"
+                      placeholder="Mínimo 6 caracteres"
+                      disabled={isSubmitting}
                     />
                     {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password}</p>}
                   </div>
@@ -214,7 +288,8 @@ const RegisterForm = () => {
                       className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
                         errors.confirmPassword ? 'border-red-500' : 'border-gray-300'
                       }`}
-                      placeholder="Confirmar contraseña"
+                      placeholder="Repite tu contraseña"
+                      disabled={isSubmitting}
                     />
                     {errors.confirmPassword && <p className="text-red-500 text-sm mt-1">{errors.confirmPassword}</p>}
                   </div>
@@ -228,6 +303,7 @@ const RegisterForm = () => {
                         checked={formData.acceptTerms}
                         onChange={handleChange}
                         className="mt-1 mr-2"
+                        disabled={isSubmitting}
                       />
                       <label htmlFor="acceptTerms" className="text-sm text-gray-700">
                         Acepto términos y condiciones
@@ -243,6 +319,7 @@ const RegisterForm = () => {
                         checked={formData.acceptPrivacy}
                         onChange={handleChange}
                         className="mt-1 mr-2"
+                        disabled={isSubmitting}
                       />
                       <label htmlFor="acceptPrivacy" className="text-sm text-gray-700">
                         Acepto Política de tratamiento de datos

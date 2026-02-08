@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
 import Hero from '../home/Hero';
+import logo from '../../assets/logo_actualizado.webp';
 
 const HeaderWithHero = ({ onLoginClick }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -30,8 +31,8 @@ const HeaderWithHero = ({ onLoginClick }) => {
         {/* Header Navigation */}
         <nav className="container mx-auto px-4 py-4 flex items-center justify-between text-white">
           <Link to="/" className="flex items-center">
-            <div className="text-2xl font-bold">izyacademy</div>
-          </Link>
+                <img src={logo} alt="IzyAcademy" className="h-10 w-auto"/>
+                 </Link>
 
           <div className="hidden md:flex items-center gap-6">
             <Link to="/" className="hover:text-gray-200 transition">
