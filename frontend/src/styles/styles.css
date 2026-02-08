@@ -1,0 +1,107 @@
+/* ========================================
+   IMPORTS
+   ======================================== */
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Open+Sans:wght@300;400;600;700&display=swap');
+@import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css');
+
+/* ========================================
+   VARIABLES Y RESET
+   ======================================== */
+:root {
+  --color-primary: #1D3A6C;
+  --color-secondary: #4A90E2;
+  --color-text: #333333;
+  --color-text-light: #666666;
+  --color-white: #FFFFFF;
+  --color-gray-light: #F5F5F5;
+  --color-gray: #CCCCCC;
+
+  --font-title: 'Nunito', sans-serif;
+  --font-body: 'Open Sans', sans-serif;
+
+  --title-size: 26px;
+  --body-size: 15px;
+  --title-margin: 30px;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--font-body);
+  font-size: var(--body-size);
+  line-height: 1.6;
+  color: var(--color-text);
+  background-color: var(--color-white);
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+ul {
+  list-style: none;
+}
+
+img {
+  max-width: 100%;
+  display: block;
+}
+
+/* ========================================
+   UTILIDADES GENERALES
+   ======================================== */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.section-title {
+  font-family: var(--font-title);
+  font-size: var(--title-size);
+  color: var(--color-primary);
+  margin-bottom: var(--title-margin);
+  font-weight: 700;
+  text-align: center;
+}
+
+/* ========================================
+   FORMULARIOS
+   ======================================== */
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 12px 15px;
+  border: 1px solid var(--color-gray);
+  border-radius: 5px;
+  font-size: 14px;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+}
+
+.btn-submit {
+  width: 100%;
+  padding: 12px;
+  background-color: var(--color-primary);
+  color: var(--color-white);
+  border: none;
+  border-radius: 5px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-submit:hover {
+  background-color: var(--color-secondary);
+}
