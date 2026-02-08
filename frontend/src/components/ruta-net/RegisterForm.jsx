@@ -1,6 +1,31 @@
 import { useState } from 'react';
+import axios from 'axios';
 import Button from '../ui/Button';
 import Swal from 'sweetalert2';
+
+// Configuración de Axios
+const api = axios.create({
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000',
+  timeout: 10000,
+  headers: {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json'
+  }
+});
+
+// Interceptor para manejo de errores
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.code === 'ECONNABORTED') {
+      throw new Error('Tiempo de espera agotado');
+    }
+    if (error.code === 'ERR_NETWORK') {
+      throw new Error('Error de red. Verifica que el servidor esté corriendo');
+    }
+    throw error;
+  }
+);
 
 const RegisterForm = () => {
   const [formData, setFormData] = useState({
@@ -18,17 +43,16 @@ const RegisterForm = () => {
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData({
-      ...formData,
+    setFormData(prev => ({
+      ...prev,
       [name]: type === 'checkbox' ? checked : value
-    });
+    }));
     
-    // Limpiar error del campo cuando el usuario empieza a escribir
     if (errors[name]) {
-      setErrors({
-        ...errors,
+      setErrors(prev => ({
+        ...prev,
         [name]: ''
-      });
+      }));
     }
   };
 
@@ -45,7 +69,7 @@ const RegisterForm = () => {
 
     if (!formData.email.trim()) {
       newErrors.email = 'El correo electrónico es requerido';
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       newErrors.email = 'El correo electrónico no es válido';
     }
 
@@ -72,25 +96,37 @@ const RegisterForm = () => {
     return newErrors;
   };
 
-  // Verificar si ambos checkbox están marcados para habilitar el botón
   const isButtonEnabled = formData.acceptTerms && formData.acceptPrivacy;
+
+  const resetForm = () => {
+    setFormData({
+      first_name: '',
+      last_name: '',
+      email: '',
+      password: '',
+      confirmPassword: '',
+      acceptTerms: false,
+      acceptPrivacy: false
+    });
+  };
+
+  const showError = async (message, details = '') => {
+    await Swal.fire({
+      icon: 'error',
+      title: message,
+      text: details,
+      confirmButtonColor: '#3b82f6'
+    });
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // Validar el formulario
     const validationErrors = validateForm();
     
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
-      
-      // Mostrar alerta de error con SweetAlert
-      Swal.fire({
-        icon: 'error',
-        title: 'Error en el formulario',
-        text: 'Por favor, corrige los errores antes de continuar',
-        confirmButtonColor: '#3b82f6'
-      });
+      await showError('Error en el formulario', 'Por favor, corrige los errores antes de continuar');
       return;
     }
 
@@ -98,29 +134,14 @@ const RegisterForm = () => {
     setErrors({});
 
     try {
-      console.log('Intentando conectar con el servidor...');
-      
-      // Llamada directa al backend
-      const response = await fetch('http://localhost:3000/api/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          first_name: formData.first_name,
-          last_name: formData.last_name,
-          email: formData.email,
-          password: formData.password
-        })
+      const { data } = await api.post('/api/register', {
+        first_name: formData.first_name,
+        last_name: formData.last_name,
+        email: formData.email,
+        password: formData.password
       });
 
-      console.log('Respuesta recibida:', response.status);
-
-      const data = await response.json();
-      console.log('Datos:', data);
-
       if (data.success) {
-        // Alerta de éxito
         await Swal.fire({
           icon: 'success',
           title: '¡Registro exitoso!',
@@ -129,47 +150,21 @@ const RegisterForm = () => {
           confirmButtonText: 'Aceptar'
         });
         
-        // Limpiar formulario
-        setFormData({
-          first_name: '',
-          last_name: '',
-          email: '',
-          password: '',
-          confirmPassword: '',
-          acceptTerms: false,
-          acceptPrivacy: false
-        });
+        resetForm();
       } else {
-        // Alerta de error del servidor
-        Swal.fire({
-          icon: 'error',
-          title: 'Error al registrar',
-          text: data.message || 'No se pudo completar el registro',
-          confirmButtonColor: '#3b82f6'
-        });
+        await showError('Error al registrar', data.message || 'No se pudo completar el registro');
       }
     } catch (error) {
-      console.error('Error completo:', error);
+      let errorMessage = 'No se pudo conectar con el servidor';
       
-      // Alerta de error de conexión mejorada
-      Swal.fire({
-        icon: 'error',
-        title: 'Error de conexión',
-        html: `
-          <p>No se pudo conectar con el servidor.</p>
-          <br>
-          <p><strong>Verifica que:</strong></p>
-          <ul style="text-align: left;">
-            <li>El servidor backend esté corriendo</li>
-            <li>El servidor esté en el puerto 3000</li>
-            <li>No haya errores en la consola del backend</li>
-          </ul>
-          <br>
-          <p><strong>Error:</strong> ${error.message}</p>
-        `,
-        confirmButtonColor: '#3b82f6',
-        width: 600
-      });
+      if (error.response) {
+        // El servidor respondió con un código de error
+        errorMessage = error.response.data?.message || `Error del servidor: ${error.response.status}`;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      await showError('Error de conexión', errorMessage);
     } finally {
       setIsSubmitting(false);
     }
@@ -190,7 +185,7 @@ const RegisterForm = () => {
                   className="w-full h-full object-cover"
                 />
                 <div className="absolute top-4 right-4">
-                  <div className="text-2xl font-bold text-white">izyacademy</div>
+                  <div className="text-2xl font-bold text-white drop-shadow-lg">izyacademy</div>
                 </div>
               </div>
 
@@ -209,11 +204,12 @@ const RegisterForm = () => {
                       name="first_name"
                       value={formData.first_name}
                       onChange={handleChange}
-                      className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
+                      className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-colors ${
                         errors.first_name ? 'border-red-500' : 'border-gray-300'
                       }`}
                       placeholder="Nombre"
                       disabled={isSubmitting}
+                      autoComplete="given-name"
                     />
                     {errors.first_name && <p className="text-red-500 text-sm mt-1">{errors.first_name}</p>}
                   </div>
@@ -228,11 +224,12 @@ const RegisterForm = () => {
                       name="last_name"
                       value={formData.last_name}
                       onChange={handleChange}
-                      className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
+                      className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-colors ${
                         errors.last_name ? 'border-red-500' : 'border-gray-300'
                       }`}
                       placeholder="Apellidos"
                       disabled={isSubmitting}
+                      autoComplete="family-name"
                     />
                     {errors.last_name && <p className="text-red-500 text-sm mt-1">{errors.last_name}</p>}
                   </div>
@@ -247,11 +244,12 @@ const RegisterForm = () => {
                       name="email"
                       value={formData.email}
                       onChange={handleChange}
-                      className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
+                      className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-colors ${
                         errors.email ? 'border-red-500' : 'border-gray-300'
                       }`}
                       placeholder="correo@ejemplo.com"
                       disabled={isSubmitting}
+                      autoComplete="email"
                     />
                     {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
                   </div>
@@ -266,11 +264,12 @@ const RegisterForm = () => {
                       name="password"
                       value={formData.password}
                       onChange={handleChange}
-                      className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
+                      className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-colors ${
                         errors.password ? 'border-red-500' : 'border-gray-300'
                       }`}
                       placeholder="Mínimo 6 caracteres"
                       disabled={isSubmitting}
+                      autoComplete="new-password"
                     />
                     {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password}</p>}
                   </div>
@@ -285,16 +284,17 @@ const RegisterForm = () => {
                       name="confirmPassword"
                       value={formData.confirmPassword}
                       onChange={handleChange}
-                      className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
+                      className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-colors ${
                         errors.confirmPassword ? 'border-red-500' : 'border-gray-300'
                       }`}
                       placeholder="Repite tu contraseña"
                       disabled={isSubmitting}
+                      autoComplete="new-password"
                     />
                     {errors.confirmPassword && <p className="text-red-500 text-sm mt-1">{errors.confirmPassword}</p>}
                   </div>
 
-                  <div className="space-y-2">
+                  <div className="space-y-2 pt-2">
                     <div className="flex items-start">
                       <input
                         type="checkbox"
@@ -302,14 +302,14 @@ const RegisterForm = () => {
                         name="acceptTerms"
                         checked={formData.acceptTerms}
                         onChange={handleChange}
-                        className="mt-1 mr-2"
+                        className="mt-1 mr-2 w-4 h-4 text-primary focus:ring-primary"
                         disabled={isSubmitting}
                       />
-                      <label htmlFor="acceptTerms" className="text-sm text-gray-700">
+                      <label htmlFor="acceptTerms" className="text-sm text-gray-700 cursor-pointer">
                         Acepto términos y condiciones
                       </label>
                     </div>
-                    {errors.acceptTerms && <p className="text-red-500 text-sm">{errors.acceptTerms}</p>}
+                    {errors.acceptTerms && <p className="text-red-500 text-sm ml-6">{errors.acceptTerms}</p>}
 
                     <div className="flex items-start">
                       <input
@@ -318,14 +318,14 @@ const RegisterForm = () => {
                         name="acceptPrivacy"
                         checked={formData.acceptPrivacy}
                         onChange={handleChange}
-                        className="mt-1 mr-2"
+                        className="mt-1 mr-2 w-4 h-4 text-primary focus:ring-primary"
                         disabled={isSubmitting}
                       />
-                      <label htmlFor="acceptPrivacy" className="text-sm text-gray-700">
+                      <label htmlFor="acceptPrivacy" className="text-sm text-gray-700 cursor-pointer">
                         Acepto Política de tratamiento de datos
                       </label>
                     </div>
-                    {errors.acceptPrivacy && <p className="text-red-500 text-sm">{errors.acceptPrivacy}</p>}
+                    {errors.acceptPrivacy && <p className="text-red-500 text-sm ml-6">{errors.acceptPrivacy}</p>}
                   </div>
 
                   <Button
@@ -333,9 +333,19 @@ const RegisterForm = () => {
                     disabled={!isButtonEnabled || isSubmitting}
                     variant="primary"
                     size="large"
-                    className="w-full"
+                    className="w-full mt-6"
                   >
-                    {isSubmitting ? 'Registrando...' : 'Registrarse'}
+                    {isSubmitting ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                        </svg>
+                        Registrando...
+                      </span>
+                    ) : (
+                      'Registrarse'
+                    )}
                   </Button>
                 </form>
               </div>
